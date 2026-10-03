@@ -45,7 +45,12 @@ function renderNote(note) {
   const body = document.createElement("p");
   body.textContent = note.body || "";
 
-  li.append(title, body);
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.textContent = "Delete";
+  deleteBtn.addEventListener("click", () => deleteNote(note.id, li, deleteBtn));
+
+  li.append(title, body, deleteBtn);
   return li;
 }
 
@@ -130,3 +135,28 @@ async function createNote(event) {
 }
 
 form.addEventListener("submit", createNote);
+// DELETE: remove a note.
+// JSONPlaceholder is a practice API: it pretends to accept our changes and
+// returns success, but it never really stores or deletes anything. So after
+// a successful DELETE response, we remove the note from the page ourselves.
+// Refreshing the page loads the original 10 notes again, and notes created
+// with POST are not really saved, which is expected with this fake API.
+async function deleteNote(id, li, button) {
+  button.disabled = true;
+  setStatus("Deleting note...", "status-loading");
+
+  try {
+    const { status } = await request(`${API_URL}/${id}`, { method: "DELETE" });
+
+    li.remove();
+    if (notesList.children.length === 0) {
+      showEmptyMessage();
+    }
+    setStatus(`Note ${id} deleted (status ${status}).`, "status-success");
+  } catch (error) {
+    console.error(error);
+    setStatus("Sorry, we could not delete the note. Please try again.", "status-error");
+  } finally {
+    button.disabled = false;
+  }
+}
